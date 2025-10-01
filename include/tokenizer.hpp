@@ -2,28 +2,34 @@
 #define TOKENIZER_HPP
 
 #include <string>
+#include <vector>
 
 enum TokenType {
 	TOKEN_END,
 	TOKEN_INVALID,
 	TOKEN_OPERAND,
 	TOKEN_OPERATOR,
+	TOKEN_LPAREN,
+	TOKEN_RPAREN,
 };
 
 struct Token {
 	TokenType type;
-	std::string text;
-	int length;
+	int pos;
+	char ch;
 };
+
+void init_token(Token &t, char ch);
+void print_token_info(const Token &t);
+void print_type(TokenType t);
 
 class Tokenizer {
 	private:
-		std::string expr;
-		int elength;
-		int cursor;
+		std::vector<Token> expr;
+		int tlength;
 	public:
-		Tokenizer(std::string expr);
+		Tokenizer(const std::string expr);
 		void printinfo();
 };
-#endif
 
+#endif
