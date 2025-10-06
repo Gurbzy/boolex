@@ -1,53 +1,11 @@
 #include "tokenizer.hpp"
 #include "utils.hpp"
 #include <iostream>
+#include <algorithm>
 #include <queue>
-
-Precedence map_prec(char ch) {
-	switch (ch) {
-		case '(': return PAREN; break;
-		case ')': return PAREN; break;
-		case '#': return HASHTAG; break;
-		case '!': return NOT; break;
-		case '~': return NOT; break;
-		case '|': return OR; break;
-		case '&': return AND; break;
-		case '^': return XOR; break;
-		case '=': return EQUALS; break;
-		default: return OP_INVALID;
-	}
-	return OP_INVALID;
-}
-
-Precedence getprec(const Token &t) {
-	return t.prec;
-}
-
-void init_token(Token &t, char ch, Precedence p) {
-	t.ch = ch;
-	p = map_prec(ch);
-	t.prec  = p;
-
-	if (isOperand(ch))  { t.type = TOKEN_OPERAND;	}
-	if (isOperator(ch)) { t.type = TOKEN_OPERATOR;	}
-	if (isInvalid(ch))  { t.type = TOKEN_INVALID;	}
-	if (ch == '(') { t.type = TOKEN_LPAREN; } 
-	if (ch == ')') { t.type = TOKEN_RPAREN; }
-}
-
-void print_type(TokenType T) {
-	switch (T) {
-		case TOKEN_INVALID: std::cout << "TOKEN_INVALID"; break;
-		case TOKEN_OPERAND: std::cout << "TOKEN_OPERAND"; break;
-		case TOKEN_OPERATOR: std::cout << "TOKEN_OPERATOR"; break;
-		case TOKEN_LPAREN: std::cout << "TOKEN_LPAREN"; break;
-		case TOKEN_RPAREN: std::cout << "TOKEN_RPAREN"; break;
-	}
-}
-
-void print_token_info(const Token &t) {
-	std::cout << "(" << t.ch << ")  :  "; print_type(t.type); std::cout << std::endl; 
-}
+#include <set>
+#include <stack>
+#include <iomanip>
 
 Tokenizer::Tokenizer(const std::string ex) {
 	this->tlength = 0;
@@ -64,14 +22,61 @@ Tokenizer::Tokenizer(const std::string ex) {
 	}
 }
 
-void Tokenizer::printinfo() {
+void Tokenizer::print_info() {
 	std::cout << "INFO:\n";
 	for (int i = 0; i < tlength; i++) {
 		print_token_info(expr[i]);		
 	}
 }
 
+std::vector<std::string> Tokenizer::gen_subexprs() {
+	std::queue<Token> pfix = this->ifix_to_pfix();
+	std::vector<std::string> subexprs;
+    std::stack<std::string> st;
+
+    while (!pfix.empty()) {
+        Token front = pfix.front();
+        pfix.pop();
+
+        if (isOperand(front)) {
+            st.push(std::string(1, front.ch));
+        }
+        else if (isUnary_op(front)) {
+            if (!st.empty()) {
+                std::string operand = st.top(); st.pop();
+				std::string op(1, front.ch);
+                std::string expr = "(" + op + operand + ")";
+                st.push(expr);
+                subexprs.push_back(expr);
+            }
+        }
+        else if (isBinary_op(front)) {
+            // Pop right then left (since postfix)
+            if (st.size() >= 2) {
+                std::string right = st.top(); st.pop();
+                std::string left = st.top(); st.pop();
+				std::string op(1, front.ch);
+                std::string expr = "(" + left + op + right + ")";
+                st.push(expr);
+                subexprs.push_back(expr);
+            }
+      	}
+	}
+
+	return subexprs;
+}
+
+void Tokenizer::print_subexprs() {
+	std::vector<std::string> subexprs = this->gen_subexprs();
+
+	for (std::string &sex : subexprs) {
+		std::cout << std::setw(COLWIDTH) << std::left << sex;
+	}
+	std::cout << "\n";
+}
+
 std::queue<Token> Tokenizer::ifix_to_pfix() {
+	// shunting yard algorithm 
 	std::vector<Token> shuntstack;
 	std::queue<Token>  shuntqueue;
 
@@ -110,7 +115,6 @@ std::queue<Token> Tokenizer::ifix_to_pfix() {
 					break;
 				}
 			}
-
 			shuntstack.push_back(expr[i]);
 		}
 	}
@@ -135,5 +139,81 @@ void Tokenizer::print_queue() {
 		pfix.pop();
 	}
 	std::cout << "\n";
+}
+
+std::map<char, int> Tokenizer::map_unique_idxs() {
+	std::map<char, int> uniq_idx;
+	int idxstart = 0;
+
+	for (int i = 0; i < this->tlength; i++) {
+		if (isOperand(expr[i].ch) && uniq_idx.find(expr[i].ch) == uniq_idx.end()) {
+			uniq_idx[expr[i].ch] = idxstart++;
+		}
+	}
+
+	return uniq_idx;
+}
+
+void Tokenizer::print_unique_vars() {
+	std::map<char, int> map = this->map_unique_idxs();
+
+	for (const auto & var : map) {
+		std::cout << std::setw(COLWIDTH) << std::left << var.first;
+	}
+}
+
+void Tokenizer::eval_postfix(std::queue<Token> &pfix, std::map<char, int> &var_idx, std::vector<bool> &values) {
+	std::vector<bool> evaluated;
+
+	while (!pfix.empty()) {
+		Token front = pfix.front();
+		pfix.pop();
+
+		if (isOperand(front)) {
+			int vidx = var_idx[front.ch];
+			evaluated.push_back(values[vidx]);
+		}
+		else if (isBinary_op(front)) {
+			bool operand1 = evaluated.back();
+			evaluated.pop_back();
+			bool operand2 = evaluated.back();
+			evaluated.pop_back();
+
+			bool result = perform_bin_op(operand1, operand2, front);
+			evaluated.push_back(result);
+			std::cout << std::setw(COLWIDTH) << std::left << result;
+		}
+		else if (isUnary_op(front)) {
+			bool operand1 = evaluated.back();
+			evaluated.pop_back();
+			
+			bool result = perform_unary_op(operand1, front);
+			evaluated.push_back(result);
+			std::cout << std::setw(COLWIDTH) << std::left << result;
+		}
+
+	}
+}
+
+void Tokenizer::print_truth_table() {
+	std::map<char, int> var_idx = this->map_unique_idxs();
+	int varcount = var_idx.size();
+	// 2 ^ varcount possible variable permutations
+	int rows = 1 << varcount;
+
+	std::vector<bool> current_row(varcount);
+
+	print_unique_vars();
+	print_subexprs();
+	for (int i = 0; i < rows; i++) {
+		std::queue<Token> postfix = this->ifix_to_pfix();
+
+		for (int j = 0; j < varcount; j++) {
+			current_row[j] = (bool)(i & (1 << j));
+			std::cout << std::setw(COLWIDTH) << std::left << current_row[j];
+		}
+		eval_postfix(postfix, var_idx, current_row);
+		std::cout << "\n";
+	}
 }
 

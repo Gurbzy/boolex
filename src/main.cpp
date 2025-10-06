@@ -1,10 +1,18 @@
 #include "tokenizer.hpp"
 #include "utils.hpp"
+#include <iostream>
 
 int main(int argc, const char *argv[]) {
-	std::string ex1 = "p | q = p & q";
-	Tokenizer t1(ex1);
-	t1.printinfo();
+	if (argc < 2) {
+		std::cout << "TOO FEW ARGUMENTS\n";
+		std::cout << "USAGE: ./boolex <'EXPRESSION'> EX: ./boolex '(p | q) = (!q & !p)'\n";
+		return 1;
+	}
+
+	std::string cmd_expr = argv_append(argc, argv);
+	Tokenizer t1(cmd_expr);
+	t1.print_info();
 	t1.print_queue();
+	t1.print_truth_table();
 	return 0;
 }

@@ -9,9 +9,6 @@ DEP = $(OBJ:.o=.d)
 boolex: $(OBJ)
 	g++ $(OBJ) -o $@
 
-run: boolex
-	./boolex
-
 $(OBJDIR)/%.o: src/%.cpp | $(OBJDIR)
 	g++ -c $< $(CFLAGS) $(INCFLAGS) -o $@
 
