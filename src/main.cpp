@@ -11,8 +11,6 @@ int main(int argc, const char *argv[]) {
 
 	std::string cmd_expr = argv_append(argc, argv);
 	Tokenizer t1(cmd_expr);
-	t1.print_info();
-	t1.print_queue();
 	t1.print_truth_table();
 	return 0;
 }
