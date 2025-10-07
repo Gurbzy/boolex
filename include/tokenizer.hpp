@@ -16,6 +16,8 @@ enum TokenType {
 enum Precedence {
 	HASHTAG = -1,
 	EQUALS,
+	IFF,
+	IMPLICATION,
 	OR,
 	XOR,
 	AND,
@@ -33,6 +35,7 @@ struct Token {
 struct varIDX {
 	char var;
 	int idx;
+
 };
 
 class Tokenizer {

@@ -6,7 +6,9 @@
 
 - Parses infix boolean expressions with operators:
   - `!` (NOT)
-  - `~` (NOT)
+  - `@` (IFF)
+  - `>` (IMPLICATION FORWARD)
+  - `<` (IMPLICATION BACKWARD)
   - `&` (AND)
   - `|` (OR)
   - `=` (EQUIVALENCE)

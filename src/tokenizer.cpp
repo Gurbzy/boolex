@@ -45,7 +45,7 @@ std::vector<std::string> Tokenizer::gen_subexprs() {
             if (!st.empty()) {
                 std::string operand = st.top(); st.pop();
 				std::string op(1, front.ch);
-                std::string expr = "(" + op + operand + ")";
+                std::string expr = op + "(" + operand + ")";
                 st.push(expr);
                 subexprs.push_back(expr);
             }

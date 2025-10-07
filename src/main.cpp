@@ -14,6 +14,7 @@ int main(int argc, const char *argv[]) {
 
 	if (!t1.checkValid()) {
 		std::cout << "INVALID EXPRESSION\n";
+		t1.print_info();
 		return 1;
 	}
 

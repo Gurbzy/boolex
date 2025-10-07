@@ -5,6 +5,9 @@
 #include <string>
 
 const int COLWIDTH = 20;
+const std::string ops = "<>@!&|^=";
+const std::string bops = "<>@&|^=";
+const std::string uops = "!";
 
 bool isOperand(char c);
 bool isOperator(char c);
@@ -12,6 +15,9 @@ bool isInvalid(char c);
 bool isOperand(Token t);
 bool isOperator(Token t);
 
+bool implication_forward(bool a, bool b);
+bool implication_backward(bool a, bool b);
+bool iff(bool a, bool b);
 
 bool isUnary_op(Token t);
 bool isBinary_op(Token t);

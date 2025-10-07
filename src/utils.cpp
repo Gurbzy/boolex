@@ -10,7 +10,6 @@ bool isOperand(char c) {
 }
 
 bool isOperator(char c) {
-	const std::string ops = "~!&|^=";
 	return (ops.find(c) != std::string::npos);
 }
 
@@ -19,22 +18,31 @@ bool isOperand(Token t) {
 }
 
 bool isOperator(Token t) {
-	const std::string ops = "~!&|^=";
 	return (ops.find(t.ch) != std::string::npos); 
 }
 
 bool isBinary_op(Token t) {
-	const std::string bops = "&|^=";
 	return (bops.find(t.ch) != std::string::npos); 
 }
 
 bool isUnary_op(Token t) {
-	const std::string uops = "!~";
 	return (uops.find(t.ch) != std::string::npos); 
 }
 
 bool isInvalid(char c) {
 	return !isOperand(c) && !isOperator(c) && c != '(' && c != ')';
+}
+
+bool implication_forward(bool a, bool b) {
+	return (!a | b);
+}
+
+bool implication_backward(bool a, bool b) {
+	return !(!a | b);
+}
+
+bool iff(bool a, bool b) {
+	return !(a ^ b);
 }
 
 bool perform_bin_op(bool a, bool b, Token t) {
@@ -43,6 +51,9 @@ bool perform_bin_op(bool a, bool b, Token t) {
 		case '&': return a & b;
 		case '|': return a | b;
 		case '^': return a ^ b;
+		case '>': return implication_forward(a, b);
+		case '<': return implication_backward(a, b);
+		case '@': return iff(a, b);
 		case '=': return a == b;
 		default: 
 			std::cout << "fatal error, unknown bin_op token: " << t.ch << "\n";
@@ -57,7 +68,6 @@ bool perform_unary_op(bool a, Token t) {
 
 	switch (t.ch) {
 		case '!': return !a;
-		case '~': return !a;
 		default:
 			std::cout << "fatal error, unknown unary_op token: " << t.ch << "\n";
 			return false;
@@ -69,15 +79,17 @@ bool perform_unary_op(bool a, Token t) {
 
 Precedence map_prec(char ch) {
 	switch (ch) {
-		case '(': return PAREN; break;
-		case ')': return PAREN; break;
-		case '#': return HASHTAG; break;
-		case '!': return NOT; break;
-		case '~': return NOT; break;
-		case '|': return OR; break;
-		case '&': return AND; break;
-		case '^': return XOR; break;
-		case '=': return EQUALS; break;
+		case '(': return PAREN; 
+		case ')': return PAREN; 
+		case '#': return HASHTAG; 
+		case '!': return NOT; 
+		case '~': return IFF; 
+		case '>': return IMPLICATION; 
+		case '<': return IMPLICATION; 
+		case '|': return OR; 
+		case '&': return AND; 
+		case '^': return XOR; 
+		case '=': return EQUALS; 
 		default: return OP_INVALID;
 	}
 	return OP_INVALID;
