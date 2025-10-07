@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <map>
 
 enum TokenType {
 	TOKEN_INVALID,
@@ -31,15 +30,24 @@ struct Token {
 	char ch;
 };
 
+struct varIDX {
+	char var;
+	int idx;
+};
+
 class Tokenizer {
 	private:
 		std::vector<Token> expr;
 		int tlength;
 
 		std::queue<Token> ifix_to_pfix();
-		std::map<char, int> map_unique_idxs();
-		void eval_postfix(std::queue<Token> &pfix, std::map<char, int> &var_idx, std::vector<bool> &values);
+		std::vector<varIDX> map_unique_idxs();
+		void eval_postfix(std::queue<Token> &pfix, std::vector<varIDX>  &var_idx, std::vector<bool> &values);
 		std::vector<std::string> gen_subexprs();
+		bool isUnique(std::vector<varIDX> &vidx, char c);
+		int find_idx(std::vector<varIDX> &vidx, char c);
+		bool isValid(std::queue<Token> &pfix);
+		bool isValid();
 	public:
 		Tokenizer(const std::string expr);
 		void print_info();
@@ -47,6 +55,7 @@ class Tokenizer {
 		void print_unique_vars();
 		void print_truth_table();
 		void print_subexprs();
+		bool checkValid();
 };
 
 #endif

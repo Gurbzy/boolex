@@ -56,7 +56,7 @@ std::vector<std::string> Tokenizer::gen_subexprs() {
                 std::string right = st.top(); st.pop();
                 std::string left = st.top(); st.pop();
 				std::string op(1, front.ch);
-                std::string expr = "(" + left + op + right + ")";
+                std::string expr = left + " " + op + " " + right;
                 st.push(expr);
                 subexprs.push_back(expr);
             }
@@ -141,28 +141,79 @@ void Tokenizer::print_queue() {
 	std::cout << "\n";
 }
 
-std::map<char, int> Tokenizer::map_unique_idxs() {
-	std::map<char, int> uniq_idx;
+bool Tokenizer::isUnique(std::vector<varIDX> &vidx, char c) {
+	for (size_t i = 0; i < vidx.size(); i++) {
+		if (vidx[i].var == c) {
+			return false;
+		}
+	}
+	return true;
+}
+
+std::vector<varIDX> Tokenizer::map_unique_idxs() {
+	std::vector<varIDX> uniq_idx;
 	int idxstart = 0;
 
 	for (int i = 0; i < this->tlength; i++) {
-		if (isOperand(expr[i].ch) && uniq_idx.find(expr[i].ch) == uniq_idx.end()) {
-			uniq_idx[expr[i].ch] = idxstart++;
+		if (isOperand(expr[i].ch) && isUnique(uniq_idx, expr[i].ch)) { 
+			uniq_idx.push_back({expr[i].ch, idxstart++ });
 		}
 	}
 
 	return uniq_idx;
 }
 
-void Tokenizer::print_unique_vars() {
-	std::map<char, int> map = this->map_unique_idxs();
+int Tokenizer::find_idx(std::vector<varIDX> &vidx, char c) {
+	for (size_t i = 0; i < vidx.size(); i++) {
+		if (vidx[i].var == c) {
+			return vidx[i].idx;
+		}
+	}
+	return -1;
+}
 
-	for (const auto & var : map) {
-		std::cout << std::setw(COLWIDTH) << std::left << var.first;
+bool Tokenizer::isValid(std::queue<Token> &pfix) {
+	int counter = 0;
+
+	while (!pfix.empty()) {
+		Token front = pfix.front();
+		pfix.pop();
+
+		if (isOperand(front)) {
+			counter++;
+		}
+
+		if (isBinary_op(front)) {
+			counter--;
+			counter--;
+			counter++;
+		}
+		if (isUnary_op(front)) {
+			counter--;
+			counter++;
+		}
+	}
+	return counter == 1;
+}
+
+bool Tokenizer::isValid() {
+	int parens = 0;
+	for (int i = 0; i < tlength; i++) {
+		if (expr[i].ch == '(') parens++;
+		if (expr[i].ch == ')') parens--;
+	}
+	return parens == 0;
+}
+
+void Tokenizer::print_unique_vars() {
+	std::vector<varIDX> map = this->map_unique_idxs();
+
+	for (const auto & ele : map) {
+		std::cout << std::setw(COLWIDTH) << std::left << ele.var;
 	}
 }
 
-void Tokenizer::eval_postfix(std::queue<Token> &pfix, std::map<char, int> &var_idx, std::vector<bool> &values) {
+void Tokenizer::eval_postfix(std::queue<Token> &pfix, std::vector<varIDX> &var_idx, std::vector<bool> &values) {
 	std::vector<bool> evaluated;
 
 	while (!pfix.empty()) {
@@ -170,7 +221,7 @@ void Tokenizer::eval_postfix(std::queue<Token> &pfix, std::map<char, int> &var_i
 		pfix.pop();
 
 		if (isOperand(front)) {
-			int vidx = var_idx[front.ch];
+			int vidx = find_idx(var_idx, front.ch);
 			evaluated.push_back(values[vidx]);
 		}
 		else if (isBinary_op(front)) {
@@ -196,7 +247,7 @@ void Tokenizer::eval_postfix(std::queue<Token> &pfix, std::map<char, int> &var_i
 }
 
 void Tokenizer::print_truth_table() {
-	std::map<char, int> var_idx = this->map_unique_idxs();
+	std::vector<varIDX> var_idx = this->map_unique_idxs();
 	int varcount = var_idx.size();
 	// 2 ^ varcount possible variable permutations
 	int rows = 1 << varcount;
@@ -217,3 +268,11 @@ void Tokenizer::print_truth_table() {
 	}
 }
 
+bool Tokenizer::checkValid() {
+	std::queue<Token> postfix = this->ifix_to_pfix();
+
+	if (!isValid(postfix)) return false;
+	if (!isValid()) return false;
+
+	return true;
+}
